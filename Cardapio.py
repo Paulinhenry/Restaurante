@@ -1,5 +1,19 @@
 from unicodedata import numeric
 endereco_loja = "Rua Cristovão"
+import sqlite3
+
+def salvar_pedido(nome, item, conta, endereco):
+    con = sqlite3.connect("lanchonete.db")
+    cur = con.cursor()
+
+    cur.execute("""
+        INSERT INTO pedidos (nome, item, conta, endereco)
+        VALUES (?, ?, ?, ?)
+    """, (nome, item, conta, endereco))
+
+    con.commit()
+    con.close()
+itens_pedidos = []
 i = 1
 conta = 0
 def novo_pedido():
@@ -30,15 +44,17 @@ def novo_pedido():
                 valor = 20
                 item = "X-tudo"
         print("Anotado!!! o {}° item escolhido foi {} e possui o valor de {} R$ ".format(i,item, valor))
-        return valor
-valor = novo_pedido()
+        return valor, item
+valor, item = novo_pedido()
 conta += valor
+itens_pedidos.append(item)
 print("Deseja algo a mais ??? (S/N), (Y/N)")
 algo_mais = str(input())
 while (algo_mais == "S") or (algo_mais == "Y"):
     i = i + 1
-    valor = novo_pedido()
+    valor, item = novo_pedido()
     conta += valor
+    itens_pedidos.append(item)
     print("Deseja algo a mais ??? (S/N), (Y/N)")
     algo_mais = str(input())
 print("A conta total deu {} R$".format(conta))
@@ -46,24 +62,32 @@ print("Digite o Nome associado ao pedido")
 nome = str(input())
 print("Irá ser para entrega ??? (S/N), (Y/N)")
 entrega = str(input())
+
 if entrega in ("S", "Y"):
     print("Digite o Endereço de Entrega:")
-    endereco = []
     print("Digite o nome da Rua/Avenida")
     rua = str(input())
     print("Digite o número da casa/apartamento")
-    numero = int(input())
+    numero = str(input())  # deixei string para evitar problemas
     print("Digite o ponto de referencia (opcional)")
-    ponto_ref= str(input())
-    endereco.append(rua)
-    endereco.append(numero)
+    ponto_ref = str(input())
+
     if ponto_ref != "":
-        endereco.append(ponto_ref)
-        print("Entrega: {}, {}, {}".format(endereco[0], endereco[1], endereco[2]))
+        endereco_final = f"{rua}, {numero}, {ponto_ref}"
+        print(f"Entrega: {endereco_final}")
     else:
-        print("Entrega: {}, {}".format(endereco[0], endereco[1]))
+        endereco_final = f"{rua}, {numero}"
+        print(f"Entrega: {endereco_final}")
+
 else:
-    print("OK!!! Pode retirar no endereço {}".format(endereco_loja))
+    endereco_final = f"Retirada na loja ({endereco_loja})"
+    print(endereco_final)
+
+# transformar lista de itens em string
+itens_str = ", ".join(itens_pedidos)
+
+# salvar no banco
+salvar_pedido(nome, itens_str, conta, endereco_final)
 
 print("Obrigado pela preferência {} volte sempre !!!".format(nome))
 
